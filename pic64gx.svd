@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<device schemaVersion="1.3" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd">
+  <vendor>Microchip</vendor>
+  <vendorID>microchip</vendorID>
+  <name>PIC64GX</name>
+  <series>PIC64GX</series>
+  <version>0.1</version>
+  <description>Minimal PIC64GX device description for MMUART2_LO-only hello world bring-up.</description>
+  <licenseText>Derived from the public Microchip PIC64GX register map documentation for MMUART.</licenseText>
+  <addressUnitBits>8</addressUnitBits>
+  <width>32</width>
+  <size>32</size>
+  <access>read-write</access>
+  <resetValue>0x00000000</resetValue>
+  <resetMask>0xFFFFFFFF</resetMask>
+  <peripherals>
+    <peripheral>
+      <name>UART2</name>
+      <description>Minimal MMUART2_LO view for a standalone UART hello world payload.</description>
+      <baseAddress>0x20102000</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x18</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>THR</name>
+          <description>Transmit Holding Register</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+          <fields>
+            <field>
+              <name>DATA</name>
+              <description>Byte to transmit</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DLR</name>
+          <description>Divisor Latch Register (LSB) when LCR.DLAB is set</description>
+          <alternateRegister>THR</alternateRegister>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <fields>
+            <field>
+              <name>DIVISOR_LSB</name>
+              <description>Baud divisor least-significant byte</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DMR</name>
+          <description>Divisor Latch Register (MSB) when LCR.DLAB is set</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <fields>
+            <field>
+              <name>DIVISOR_MSB</name>
+              <description>Baud divisor most-significant byte</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LCR</name>
+          <description>Line Control Register</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <fields>
+            <field>
+              <name>WLS</name>
+              <description>Word length select</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>2</bitWidth>
+            </field>
+            <field>
+              <name>DLAB</name>
+              <description>Divisor latch access bit</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LSR</name>
+          <description>Line Status Register</description>
+          <addressOffset>0x14</addressOffset>
+          <size>32</size>
+          <access>read-only</access>
+          <fields>
+            <field>
+              <name>THRE</name>
+              <description>Transmit holding register empty</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+  </peripherals>
+</device>

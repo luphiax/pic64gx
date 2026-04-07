@@ -1,0 +1,21 @@
+[package]
+name = "pic64gx"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://example.invalid/pic64gx"
+description = "Minimal PAC scaffold for PIC64GX baremetal Rust bring-up."
+categories = ["embedded", "hardware-support", "no-std"]
+keywords = ["riscv", "pac", "pic64gx", "uart"]
+rust-version = "1.76"
+
+[dependencies]
+critical-section = { version = "1", optional = true }
+riscv = "0.12"
+riscv-peripheral = "0.2"
+riscv-rt = { version = "0.13", optional = true, features = ["single-hart"] }
+vcell = "0.1.3"
+
+[features]
+rt = ["riscv-rt"]
+

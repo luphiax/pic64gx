@@ -1,0 +1,20 @@
+riscv_config:
+  core_interrupts:
+    - name: "MachineSoft"
+      value: 3
+      description: "Machine Software Interrupt"
+    - name: "MachineTimer"
+      value: 7
+      description: "Machine Timer Interrupt"
+    - name: "MachineExternal"
+      value: 11
+      description: "Machine External Interrupt"
+
+  harts:
+    - name: "H4"
+      value: 4
+      description: "Hart 4 (u54_4)"
+
+  base_isa: "rv64gc"
+  mtvec_align: 64
+

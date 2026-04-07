@@ -1,0 +1,5 @@
+MEMORY
+{
+    RAM : ORIGIN = 0x91C00000, LENGTH = 1M
+}
+
