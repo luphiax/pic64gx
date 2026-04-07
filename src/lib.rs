@@ -7,3 +7,4 @@
 //! Run `./update.sh` after validating `pic64gx.svd` to generate the real
 //! register access API with `svd2rust`.
 
+pub mod bringup_uart;

@@ -55,3 +55,25 @@ the SVD can be cut down even further to just `THR` and `LSR`.
 
 Once the SVD is validated, run `./update.sh` to generate the PAC sources and
 replace the placeholder `src/` tree.
+
+## UART smoke tests
+
+This branch also carries two baremetal bring-up examples:
+
+- `examples/test1_tx_only.rs`
+  - writes through `THR` and polls `LSR.THRE`
+  - assumes previous firmware already configured `MMUART2`
+- `examples/test2_init_uart.rs`
+  - sets `LCR.DLAB`, programs `DLR/DMR`, restores `LCR` to 8-bit mode
+  - assumes a `150 MHz` UART input clock
+
+Current status:
+
+- `cargo check --features rt --example test1_tx_only --example test2_init_uart`
+  passes on `riscv64imac-unknown-none-elf`
+- full `cargo build` currently fails at link time when targeting the real
+  payload carveout `0x91C00000`
+
+The current linker failure is not caused by the UART register model. It is a
+separate RISC-V code-model/runtime issue caused by linking a stock Rust target
+above the `0x80000000` boundary used by the current HSS payload location.
