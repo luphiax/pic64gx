@@ -71,9 +71,16 @@ Current status:
 
 - `cargo check --features rt --example test1_tx_only --example test2_init_uart`
   passes on `riscv64imac-unknown-none-elf`
-- full `cargo build` currently fails at link time when targeting the real
-  payload carveout `0x91C00000`
+- full `cargo build --features rt --example test1_tx_only --example
+  test2_init_uart` now links at `0x91C00000` when run with the checked-in
+  nightly toolchain and `build-std`
 
-The current linker failure is not caused by the UART register model. It is a
-separate RISC-V code-model/runtime issue caused by linking a stock Rust target
-above the `0x80000000` boundary used by the current HSS payload location.
+The original linker failure was not caused by the UART register model. It came
+from using the stock prebuilt `libcore` for `riscv64imac-unknown-none-elf` at
+the high payload address. This branch fixes that by rebuilding `core` and
+`compiler_builtins` locally with:
+
+- a checked-in nightly toolchain (`rust-toolchain.toml`)
+- Cargo `build-std`
+- `panic=abort`
+- unwind tables disabled
