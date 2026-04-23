@@ -83,6 +83,18 @@ SECTIONS
     . = ALIGN(4);
   } > REGION_RODATA
 
+  .eh_frame_hdr : ALIGN(4)
+  {
+    *(.eh_frame_hdr);
+    . = ALIGN(4);
+  } > REGION_RODATA
+
+  .eh_frame : ALIGN(4)
+  {
+    *(.eh_frame);
+    . = ALIGN(4);
+  } > REGION_RODATA
+
   .data : ALIGN(8)
   {
     _sidata = LOADADDR(.data);
@@ -120,12 +132,6 @@ SECTIONS
   .got (INFO) :
   {
     KEEP(*(.got .got.*));
-  }
-
-  /DISCARD/ :
-  {
-    *(.eh_frame)
-    *(.eh_frame_hdr)
   }
 }
 
