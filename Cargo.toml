@@ -13,9 +13,8 @@ rust-version = "1.76"
 critical-section = { version = "1", optional = true }
 riscv = "0.12"
 riscv-peripheral = "0.2"
-riscv-rt = { version = "0.13", optional = true, features = ["single-hart"] }
+riscv-rt = { version = "0.13", optional = true, features = ["single-hart", "no-exceptions"] }
 vcell = "0.1.3"
 
 [features]
 rt = ["riscv-rt"]
-
