@@ -31,13 +31,13 @@ scope, such as clock/reset ownership.
 - `update.sh`: regeneration script modeled after `e310x/update.sh`
 - `memory.x`: linker memory map matching the current HSS payload carveout
 - `link.x`: vendored runtime linker script for the high-address payload layout
-- `device.x`: minimal interrupt definitions for later `riscv-rt` integration
+- `device.x`: generated interrupt definitions used by the PAC runtime path
+- `src/`: generated PAC sources for the current minimal `UART2` SVD
 
-`device.x` and `update.sh` are retained for the future `svd2rust` PAC
-generation path. They are not required by the current handwritten UART smoke
-test.
+`update.sh` regenerates the PAC from `pic64gx.svd`, formats the generated
+sources, and combines the generated interrupt definitions with `memory.x`.
 
-## Next step
+## Current SVD Scope
 
 The current SVD intentionally contains only:
 
@@ -58,14 +58,12 @@ It intentionally omits:
 If you later decide to rely on preconfigured UART state from earlier firmware,
 the SVD can be cut down even further to just `THR` and `LSR`.
 
-Once the SVD is validated, run `./update.sh` to generate the PAC sources and
-replace the placeholder `src/` tree.
-
 ## UART smoke tests
 
 This branch carries one baremetal bring-up example:
 
 - `examples/test2_init_uart.rs`
+  - uses the generated PAC API for `UART2`
   - sets `LCR.DLAB`, programs `DLR/DMR`, restores `LCR` to 8-bit mode
   - assumes a `150 MHz` UART input clock
 
