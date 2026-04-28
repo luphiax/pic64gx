@@ -30,7 +30,12 @@ scope, such as clock/reset ownership.
 - `settings.yaml`: `svd2rust` settings for a single RV64 hart bring-up
 - `update.sh`: regeneration script modeled after `e310x/update.sh`
 - `memory.x`: linker memory map matching the current HSS payload carveout
+- `link.x`: vendored runtime linker script for the high-address payload layout
 - `device.x`: minimal interrupt definitions for later `riscv-rt` integration
+
+`device.x` and `update.sh` are retained for the future `svd2rust` PAC
+generation path. They are not required by the current handwritten UART smoke
+test.
 
 ## Next step
 
@@ -67,16 +72,12 @@ This branch carries one baremetal bring-up example:
 Current status:
 
 - `cargo check --features rt --example test2_init_uart` passes on
-  `riscv64imac-unknown-none-elf`
+  `riscv64gc-unknown-none-elf`
 - full `cargo build --features rt --example test2_init_uart` now links at
-  `0x91C00000` when run with the checked-in nightly toolchain and `build-std`
+  `0x91C00000` with the checked-in stable toolchain
 
 The original linker failure was not caused by the UART register model. It came
-from using the stock prebuilt `libcore` for `riscv64imac-unknown-none-elf` at
-the high payload address. This branch fixes that by rebuilding `core` and
-`compiler_builtins` locally with:
-
-- a checked-in nightly toolchain (`rust-toolchain.toml`)
-- Cargo `build-std`
-- `panic=abort`
-- unwind tables disabled
+from an implicit `.eh_frame` placement that made an `R_RISCV_32_PCREL`
+relocation go out of range at the high payload address. The vendored `link.x`
+keeps `.eh_frame_hdr` and `.eh_frame` in `REGION_RODATA`, near the rest of the
+firmware image linked at `0x91C00000`.

@@ -10,11 +10,7 @@ keywords = ["riscv", "pac", "pic64gx", "uart"]
 rust-version = "1.76"
 
 [dependencies]
-critical-section = { version = "1", optional = true }
-riscv = "0.12"
-riscv-peripheral = "0.2"
 riscv-rt = { version = "0.13", optional = true, features = ["single-hart"] }
-vcell = "0.1.3"
 
 [features]
 rt = ["riscv-rt"]
