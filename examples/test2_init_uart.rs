@@ -58,9 +58,10 @@ fn main() -> ! {
     let uart = unsafe { Uart2::steal() };
 
     init_8n1(&uart, DEFAULT_BAUD);
-    write_str(&uart, "Hello World from a baremetal program\r\n");
-    write_str(&uart, "\r\n[test2] MMUART2 PAC init + TX smoke test\r\n");
-    write_str(&uart, "[test2] Assumes 150 MHz UART input clock.\r\n");
+    write_str(
+        &uart,
+        "Hello World from a baremetal program on a PIC64GX1000 Curiosity Kit ES\r\n",
+    );
 
     loop {
         spin_loop();
