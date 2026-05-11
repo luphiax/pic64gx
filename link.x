@@ -3,12 +3,23 @@
 - Symbols that start with a double underscore (__) are considered "private"
 
 - Symbols that start with a single underscore (_) are considered "semi-public"; they can be
-  overridden in a user linker script, but should not be referred from user code
+  overridden in a user linker script, but should not be referred from user code (e.g. `extern "C" {
+  static mut _heap_size }`).
 
 - `EXTERN` forces the linker to keep a symbol in the final binary. We use this to make sure a
-  symbol is not dropped if it appears in or near the front of the linker arguments
+  symbol is not dropped if it appears in or near the front of the linker arguments and "it's not
+  needed" by any of the preceding objects (linker arguments)
 
 - `PROVIDE` is used to provide default values that can be overridden by a user linker script
+
+- In this linker script, you may find symbols that look like `${...}` (e.g., `${ARCH_WIDTH}`).
+  These are wildcards used by the `build.rs` script to adapt to different target particularities.
+  Check `build.rs` for more details about these symbols.
+
+- On alignment: it's important for correctness that the VMA boundaries of both .bss and .data *and*
+  the LMA of .data are all `${ARCH_WIDTH}`-byte aligned. These alignments are assumed by the RAM
+  initialization routine. There's also a second benefit: `${ARCH_WIDTH}`-byte aligned boundaries
+  means that you won't see "Address (..) is out of bounds" in the disassembly produced by `objdump`.
 */
 
 PROVIDE(_stext = ORIGIN(REGION_TEXT));
@@ -19,8 +30,19 @@ PROVIDE(_heap_size = 0);
 
 /** TRAP ENTRY POINTS **/
 
+/* Default trap entry point. The riscv-rt crate provides a weak alias of this function,
+   which saves caller saved registers, calls _start_trap_rust, restores caller saved registers
+   and then returns. Users can override this alias by defining the symbol themselves */
 EXTERN(_start_trap);
+
+/* Default interrupt trap entry point. When vectored trap mode is enabled,
+   the riscv-rt crate provides an implementation of this function, which saves caller saved
+   registers, calls the the DefaultHandler ISR, restores caller saved registers and returns. */
 PROVIDE(_start_DefaultHandler_trap = _start_trap);
+
+/* When vectored trap mode is enabled, each interrupt source must implement its own
+   trap entry point. By default, all interrupts start in _start_trap. However, users can
+   override these alias by defining the symbol themselves */
 PROVIDE(_start_SupervisorSoft_trap = _start_DefaultHandler_trap);
 PROVIDE(_start_MachineSoft_trap = _start_DefaultHandler_trap);
 PROVIDE(_start_SupervisorTimer_trap = _start_DefaultHandler_trap);
@@ -30,7 +52,13 @@ PROVIDE(_start_MachineExternal_trap = _start_DefaultHandler_trap);
 
 /** EXCEPTION HANDLERS **/
 
+/* Default exception handler. The riscv-rt crate provides a weak alias of this function,
+   which is a busy loop. Users can override this alias by defining the symbol themselves */
 EXTERN(ExceptionHandler);
+
+/* It is possible to define a special handler for each exception type.
+   By default, all exceptions are handled by ExceptionHandler. However, users can
+   override these alias by defining the symbol themselves */
 PROVIDE(InstructionMisaligned = ExceptionHandler);
 PROVIDE(InstructionFault = ExceptionHandler);
 PROVIDE(IllegalInstruction = ExceptionHandler);
@@ -48,7 +76,13 @@ PROVIDE(StorePageFault = ExceptionHandler);
 
 /** INTERRUPT HANDLERS **/
 
+/* Default interrupt handler. The riscv-rt crate provides a weak alias of this function,
+   which is a busy loop. Users can override this alias by defining the symbol themselves */
 EXTERN(DefaultHandler);
+
+/* It is possible to define a special handler for each interrupt type.
+   By default, all interrupts are handled by DefaultHandler. However, users can
+   override these alias by defining the symbol themselves */
 PROVIDE(SupervisorSoft = DefaultHandler);
 PROVIDE(MachineSoft = DefaultHandler);
 PROVIDE(SupervisorTimer = DefaultHandler);
@@ -60,11 +94,14 @@ SECTIONS
 {
   .text.dummy (NOLOAD) :
   {
+    /* This section is intended to make _stext address work */
     . = ABSOLUTE(_stext);
   } > REGION_TEXT
 
   .text _stext :
   {
+    /* Put reset handler first in .text section so it ends up as the entry */
+    /* point of the program. */
     KEEP(*(.init));
     KEEP(*(.init.rust));
     . = ALIGN(4);
@@ -80,6 +117,10 @@ SECTIONS
   {
     *(.srodata .srodata.*);
     *(.rodata .rodata.*);
+
+    /* 4-byte align the end (VMA) of this section.
+       This is required by LLD to ensure the LMA of the following .data
+       section will have the correct alignment. */
     . = ALIGN(4);
   } > REGION_RODATA
 
@@ -91,7 +132,7 @@ SECTIONS
 
   .eh_frame : ALIGN(4)
   {
-    *(.eh_frame);
+    KEEP(*(.eh_frame));
     . = ALIGN(4);
   } > REGION_RODATA
 
@@ -99,6 +140,7 @@ SECTIONS
   {
     _sidata = LOADADDR(.data);
     _sdata = .;
+    /* Must be called __global_pointer$ for linker relaxations to work. */
     PROVIDE(__global_pointer$ = . + 0x800);
     *(.sdata .sdata.* .sdata2 .sdata2.*);
     *(.data .data.*);
@@ -114,6 +156,7 @@ SECTIONS
     _ebss = .;
   } > REGION_BSS
 
+  /* fictitious region that represents the memory available for the heap */
   .heap (NOLOAD) :
   {
     _sheap = .;
@@ -122,6 +165,7 @@ SECTIONS
     _eheap = .;
   } > REGION_HEAP
 
+  /* fictitious region that represents the memory available for the stack */
   .stack (NOLOAD) :
   {
     _estack = .;
@@ -129,12 +173,17 @@ SECTIONS
     _sstack = .;
   } > REGION_STACK
 
+  /* fake output .got section */
+  /* Dynamic relocations are unsupported. This section is only used to detect
+     relocatable code in the input files and raise an error if relocatable code
+     is found */
   .got (INFO) :
   {
     KEEP(*(.got .got.*));
   }
 }
 
+/* Do not exceed this mark in the error messages above                                    | */
 ASSERT(ORIGIN(REGION_TEXT) % 4 == 0, "
 ERROR(riscv-rt): the start of the REGION_TEXT must be 4-byte aligned");
 
@@ -175,4 +224,9 @@ Consider changing `_max_hart_id` or `_hart_stack_size`.");
 
 ASSERT(SIZEOF(.got) == 0, "
 .got section detected in the input files. Dynamic relocations are not
-supported.");
+supported. If you are linking to C code compiled using the `gcc` crate
+then modify your build script to compile the C code _without_ the
+-fPIC flag. See the documentation of the `gcc::Config.fpic` method for
+details.");
+
+/* Do not exceed this mark in the error messages above                                    | */
